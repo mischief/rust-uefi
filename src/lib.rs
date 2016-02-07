@@ -103,12 +103,15 @@ pub trait SimpleTextOutput {
                 unsafe {
                     self.write_raw(buf.as_ptr());
                 }
+                i = 0;
             }
         }
 
-        buf[i] = 0;
-        unsafe {
-            self.write_raw(buf.as_ptr());
+        if i > 0 {
+            buf[i] = 0;
+            unsafe {
+                self.write_raw(buf.as_ptr());
+            }
         }
     }
 }
