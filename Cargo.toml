@@ -1,0 +1,6 @@
+[package]
+name = "uefi"
+version = "0.1.0"
+authors = ["Nick Owens <mischief@offblast.org>"]
+
+[dependencies]
