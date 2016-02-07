@@ -3,4 +3,11 @@ name = "uefi"
 version = "0.1.0"
 authors = ["Nick Owens <mischief@offblast.org>"]
 
+license = "Apache-2.0"
+repository = "https://github.com/mischief/rust-uefi"
+homepage = "https://github.com/mischief/rust-uefi"
+description = """
+A rust crate for interacting with UEFI
+"""
+
 [dependencies]
