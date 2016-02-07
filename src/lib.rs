@@ -5,7 +5,7 @@
 pub struct Handle(*mut usize);
 
 #[repr(C)]
-struct Status(pub u32);
+pub struct Status(pub u32);
 
 #[repr(C)]
 struct Uuid(u32, u16, u16, [u8; 4]);
