@@ -2,7 +2,7 @@
 #![no_std]
 
 #[repr(C)]
-struct Handle(*mut usize);
+pub struct Handle(*mut usize);
 
 #[repr(C)]
 struct Status(pub u32);
