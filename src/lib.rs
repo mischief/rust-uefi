@@ -1,14 +1,14 @@
 #![allow(dead_code)]
 #![no_std]
 
-#[repr(C)]
-pub struct Handle(*mut usize);
+mod void;
+use self::void::*;
 
-#[repr(C)]
-pub struct Status(pub u32);
+mod base;
+pub use self::base::{Handle, Event, Status};
 
-#[repr(C)]
-struct Uuid(u32, u16, u16, [u8; 4]);
+mod guid;
+pub use self::guid::*;
 
 #[repr(C)]
 struct InputKey {
