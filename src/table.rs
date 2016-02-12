@@ -11,11 +11,6 @@ pub struct TableHeader {
 }
 
 #[repr(C)]
-pub struct RuntimeServicesInternal {
-    header: TableHeader,
-}
-
-#[repr(C)]
 pub struct ConfigurationTableInternal {
     vendor_guid: Guid,
     vendor_table: *const NotYetDef,

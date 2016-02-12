@@ -1,6 +1,7 @@
 use base;
 use table;
 use bootservices;
+use runtimeservices;
 use console;
 
 /// UEFI System Table.
@@ -16,7 +17,7 @@ pub struct SystemTable {
     con_out: &'static console::SimpleTextOutputProtocol,
     std_err_handle: base::Handle,
     std_err: &'static console::SimpleTextOutputProtocol,
-    runtime_services: &'static table::RuntimeServicesInternal,
+    runtime_services: &'static runtimeservices::RuntimeServices,
     boot_services: &'static bootservices::BootServices,
     configuration_table_entries: usize,
     configuration_table: &'static table::ConfigurationTableInternal,
@@ -29,6 +30,10 @@ impl SystemTable {
 
     pub fn boot_services(&self) -> &'static bootservices::BootServices {
         return self.boot_services;
+    }
+
+    pub fn runtime_services(&self) -> &'static runtimeservices::RuntimeServices {
+        return self.runtime_services;
     }
 
     pub fn vendor(&self) -> *const u16 {

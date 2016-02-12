@@ -7,19 +7,23 @@ mod guid;
 mod table;
 mod systemtable;
 mod bootservices;
+mod runtimeservices;
 mod console;
 
 
 use void::{NotYetDef};
 
 
-pub use ::base::{Handle, Event, Status};
-pub use ::guid::*;
-pub use ::systemtable::*;
+pub use base::{Handle, Event, Status};
+pub use guid::*;
 
-pub use self::bootservices::BootServices;
+pub use systemtable::*;
 
-pub use self::console::{InputKey, SimpleTextOutput, SimpleTextInput, Console};
+pub use bootservices::BootServices;
+
+pub use runtimeservices::{ResetType, RuntimeServices};
+
+pub use console::{InputKey, SimpleTextOutput, SimpleTextInput, Console};
 
 #[repr(C)]
 pub struct LoadedImageProtocol {
