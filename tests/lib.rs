@@ -1,7 +1,6 @@
 extern crate libc;
-use libc::{c_void, size_t, malloc, free};
+use libc::{size_t, malloc, free};
 use std::mem;
-use std::ptr;
 
 extern crate uefi;
 use uefi::{Handle, Handles};
@@ -21,7 +20,7 @@ fn handle_iterator() {
 
         assert_eq!(nhandles, iter.len());
 
-        for h in iter {
+        for _ in iter {
             ctr += 1;
         }
 
