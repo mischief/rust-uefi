@@ -42,10 +42,3 @@ pub struct LoadedImageProtocol {
     // unload,
 }
 
-#[cfg(test)]
-mod test {
-    #[test]
-    fn it_works() {
-    }
-}
-
