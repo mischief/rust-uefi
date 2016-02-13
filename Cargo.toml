@@ -11,3 +11,7 @@ A rust crate for interacting with UEFI
 """
 
 [dependencies]
+
+[dev-dependencies]
+libc = "0.2"
+

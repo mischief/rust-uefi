@@ -13,8 +13,7 @@ mod console;
 
 use void::{NotYetDef};
 
-
-pub use base::{Handle, Event, Status};
+pub use base::{Handle, Handles, Event, Status};
 pub use guid::*;
 
 pub use systemtable::*;
