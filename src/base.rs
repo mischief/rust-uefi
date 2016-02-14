@@ -1,4 +1,5 @@
 use core::slice;
+use core::fmt;
 
 use void::CVoid;
 use systemtable;
@@ -77,5 +78,73 @@ pub enum Status {
     DeviceError = 7,
     WriteProtected = 8,
     OutOfResources = 9,
+    VolumeCorrupted = 10,
+    VolumeFull = 11,
+    NoMedia = 12,
+    MediaChanged = 13,
+    NotFound = 14,
+    AccessDenied = 15,
+    NoResponse = 16,
+    NoMapping = 17,
+    Timeout = 18,
+    NotStarted = 19,
+    AlreadyStarted = 20,
+    Aborted = 21,
+    IcmpError = 22,
+    TftpError = 23,
+    ProtocolError = 24,
+    IncompatibleVersion = 25,
+    SecurityViolation = 26,
+    CrcError = 27,
+    EndOfMedia = 28,
+    EndOfFile = 31,
+}
+
+impl Status {
+    pub fn str(&self) -> &'static str {
+        match *self {
+            Status::Success => "success",
+            Status::LoadError => "load error",
+            Status::InvalidParameter => "invalid parameter",
+            Status::Unsupported => "unsupported",
+            Status::BadBufferSize => "bad buffer size",
+            Status::BufferTooSmall => "buffer too small",
+            Status::NotReady => "not ready",
+            Status::DeviceError => "device error",
+            Status::WriteProtected => "write protected",
+            Status::OutOfResources => "out of resources",
+            Status::VolumeCorrupted => "volume corrupted",
+            Status::VolumeFull => "volume full",
+            Status::NoMedia => "no media",
+            Status::MediaChanged => "media changed",
+            Status::NotFound => "not found",
+            Status::AccessDenied => "access denied",
+            Status::NoResponse => "no response",
+            Status::NoMapping => "no mapping",
+            Status::Timeout => "timeout",
+            Status::NotStarted => "not started",
+            Status::AlreadyStarted => "already started",
+            Status::Aborted => "aborted",
+            Status::IcmpError => "ICMP error",
+            Status::TftpError => "TFTP error",
+            Status::ProtocolError => "protocol error",
+            Status::IncompatibleVersion => "incompatible version",
+            Status::SecurityViolation => "security violation",
+            Status::CrcError => "CRC error",
+            Status::EndOfMedia => "end of media",
+            Status::EndOfFile => "end of file",
+        }
+    }
+}
+
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.str())
+    }
+}
+
+#[test]
+fn status_str() {
+    assert_eq!(Status::Success.str(), "success");
 }
 
