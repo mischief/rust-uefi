@@ -1,6 +1,7 @@
 use core::fmt;
 
 /// Type for EFI_GUID.
+#[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct Guid(pub u32, pub u16, pub u16, pub [u8; 8]);
 
