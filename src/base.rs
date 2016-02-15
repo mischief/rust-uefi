@@ -21,7 +21,7 @@ impl Handles {
     }
 }
 
-#[cfg(target_os = "unknown")]
+#[cfg(target_os = "efi")]
 impl ::core::ops::Drop for Handles {
 	fn drop(&mut self) {
         let bs = systemtable::get_system_table().boot_services();
