@@ -2,7 +2,7 @@ use void::*;
 use base::{Event, Status};
 use systemtable;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct InputKey {
     scan_code: u16,
@@ -122,6 +122,7 @@ pub trait SimpleTextOutput {
 }
 
 pub trait SimpleTextInput {
+    fn read_key_async(&self) -> Result<InputKey, Status>;
     fn read_key(&self) -> Result<InputKey, Status>;
 }
 
@@ -166,17 +167,21 @@ impl SimpleTextOutput for Console {
 }
 
 impl SimpleTextInput for Console {
-    fn read_key(&self) -> Result<InputKey, Status> {
-        return Err(Status::NotReady);
-
-        let bs = self.system_table.boot_services();
-
-        let input = self.input;
-        let keyevt = input.wait_for_key;
-        let events : [Event; 1] = [keyevt];
-
+    fn read_key_async(&self) -> Result<InputKey, Status> {
         // returned key code
         let mut key = InputKey{scan_code: 0, unicode_char: 0};
+
+        let status = unsafe { (self.input.read_key_stroke)(self.input, &mut key) };
+        if status != Status::Success {
+            return Err(status);
+        }
+
+        Ok(key)
+    }
+
+    fn read_key(&self) -> Result<InputKey, Status> {
+        let bs = self.system_table.boot_services();
+        let events : [Event; 1] = [self.input.wait_for_key];
 
         loop {
             // wait for key event
@@ -184,7 +189,9 @@ impl SimpleTextInput for Console {
             // get key
             let status = unsafe { (input.read_key_stroke)(input, &mut key) };
             match status {
+                // got key
                 Status::Success => return Ok(key),
+                // should not happen since we wait_for_event, but try again anyway.
                 Status::NotReady => continue,
                 _ => return Err(status),
             }
