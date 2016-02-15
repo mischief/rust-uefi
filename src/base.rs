@@ -148,6 +148,26 @@ fn status_str() {
     assert_eq!(Status::Success.str(), "success");
 }
 
+/// Type for EFI_MEMORY_TYPE
+#[derive(PartialEq, PartialOrd, Debug)]
+#[repr(C)]
+pub enum MemoryType {
+    Reserved = 0,
+    LoaderCode = 1,
+    LoaderData = 2,
+    BootServicesCode = 3,
+    BootServicesData = 4,
+    RuntimeServicesCode = 5,
+    RuntimeServicesData = 6,
+    Conventional = 7,
+    Unusable = 8,
+    AcpiReclaimed = 9,
+    AcpiNvs = 10,
+    MemoryMappedIo = 11,
+    MemoryMappedIoPortSpace = 12,
+    PalCode = 13,
+}
+
 /// UEFI Time structure.
 #[derive(Copy, Clone, Debug, Default)]
 #[repr(C)]
