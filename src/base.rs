@@ -148,3 +148,50 @@ fn status_str() {
     assert_eq!(Status::Success.str(), "success");
 }
 
+/// UEFI Time structure.
+#[derive(Copy, Clone, Debug, Default)]
+#[repr(C)]
+pub struct Time {
+    /// Year [1900 - 9999]
+    pub year: u16,
+
+    /// Month [1 - 12]
+    pub month: u8,
+
+    /// Day [1 - 31]
+    pub day: u8,
+
+    /// Hour [0 - 23]
+    pub hour: u8,
+
+    /// Minute [0 - 59]
+    pub minute: u8,
+
+    /// Second [0 - 59]
+    pub second: u8,
+
+    __pad1: u8,
+
+    /// Nanosecond [0 - 999,999,999]
+    pub nanosecond: u32,
+
+    /// Timezone [-1440 - 1440] or 2047 for "unspecified timezone"
+    pub timezone: i16,
+
+    daylight: u8,
+    __pad2: u8,
+}
+
+impl fmt::Display for Time {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:04}-{:02}-{:02} {:02}:{:02}:{:02}", self.year, self.month, self.day, self.hour, self.minute, self.second)
+    }
+}
+
+#[repr(C)]
+pub struct TimeCapabilities {
+    resolution: u32,
+    accuracy: u32,
+    sets_to_zero: bool,
+}
+
