@@ -48,7 +48,7 @@ pub struct BootServices {
     exit_boot_services: *const NotYetDef,
     get_next_monotonic_count: *const NotYetDef,
     stall: unsafe extern "win64" fn(usize) -> Status,
-    set_watchdog_timer: *const NotYetDef,
+    set_watchdog_timer: unsafe extern "win64" fn(timeout: usize, code: u64, data_size: usize, data: *const u16) -> Status,
     connect_controller: *const NotYetDef,
     disconnect_controller: *const NotYetDef,
     open_protocol: *const NotYetDef,
@@ -133,6 +133,13 @@ impl BootServices {
     pub fn stall(&self, microseconds: usize) {
         unsafe {
             (self.stall)(microseconds);
+        }
+    }
+
+    /// Set or disable the watchdog timer.
+    pub fn set_watchdog_timer(&self, seconds: usize, code: u64) -> Status {
+        unsafe {
+            (self.set_watchdog_timer)(seconds, code, 0, ptr::null())
         }
     }
 
