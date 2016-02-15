@@ -187,13 +187,17 @@ impl SimpleTextInput for Console {
             // wait for key event
             let _ = bs.wait_for_event(&events);
             // get key
-            let status = unsafe { (input.read_key_stroke)(input, &mut key) };
-            match status {
-                // got key
-                Status::Success => return Ok(key),
-                // should not happen since we wait_for_event, but try again anyway.
-                Status::NotReady => continue,
-                _ => return Err(status),
+            let kr = self.read_key_async();
+
+            match kr {
+                Ok(k) => return Ok(k),
+                Err(s) => {
+                    match s {
+                        // should not happen since we wait_for_event, but try again anyway.
+                        Status::NotReady => continue,
+                        _ => return Err(s),
+                    }
+                },
             }
         }
     }
