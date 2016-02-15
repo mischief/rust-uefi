@@ -22,7 +22,7 @@ pub use bootservices::BootServices;
 
 pub use runtimeservices::{ResetType, RuntimeServices};
 
-pub use console::{InputKey, SimpleTextOutput, SimpleTextInput, Console};
+pub use console::{Attribute, ForegroundColor, BackgroundColor, InputKey, SimpleTextOutput, SimpleTextInput, Console};
 
 pub trait Protocol {
     fn guid() -> &'static guid::Guid;
