@@ -1,13 +1,18 @@
-use core::slice;
-use core::fmt;
+use core::{default, fmt, ptr, slice};
 
 use void::CVoid;
 use systemtable;
 
 /// Type for EFI_HANDLE.
+#[derive(Copy, Clone, Debug)]
 #[repr(C)]
 pub struct Handle(*mut CVoid);
 
+impl default::Default for Handle {
+    fn default() -> Handle { Handle(ptr::null_mut()) }
+}
+
+#[derive(Debug)]
 pub struct Handles(*const Handle, usize);
 
 impl Handles {
@@ -66,7 +71,7 @@ pub struct Event(*mut CVoid);
 /// Type for EFI_STATUS
 #[cfg_attr(target_pointer_width = "32", repr(u32))]
 #[cfg_attr(target_pointer_width = "64", repr(u64))]
-#[derive(PartialEq, PartialOrd)]
+#[derive(PartialEq, PartialOrd, Debug)]
 pub enum Status {
     Success = 0,
     LoadError = 1,
