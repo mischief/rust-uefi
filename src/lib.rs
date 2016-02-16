@@ -10,6 +10,7 @@ mod bootservices;
 mod runtimeservices;
 mod console;
 
+pub mod graphics;
 
 use void::{NotYetDef};
 
