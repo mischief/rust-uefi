@@ -59,4 +59,3 @@ pub fn get_system_table() -> &'static SystemTable {
     }
 }
 
-

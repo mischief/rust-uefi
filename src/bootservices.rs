@@ -2,7 +2,7 @@ use core::ptr;
 use core::mem;
 
 use void::{NotYetDef, CVoid};
-use base::{Event, Handle, Handles, MemoryType, Status, Time};
+use base::{Event, Handle, Handles, MemoryType, Status, Time, MemoryDescriptor};
 use guid;
 use table;
 use systemtable;
@@ -22,8 +22,8 @@ pub struct BootServices {
     restore_tpl: *const NotYetDef,
     allocate_pages: *const NotYetDef,
     free_pages: *const NotYetDef,
-    get_memory_map: *const NotYetDef,
-    allocate_pool: unsafe extern "win64" fn(pool_type: MemoryType, size: usize, out: *mut *mut u8) -> Status,
+    get_memory_map: unsafe extern "win64" fn(memory_map_size: *mut usize, memory_map: *mut MemoryDescriptor, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Status,
+    allocate_pool: unsafe extern "win64" fn(pool_type: MemoryType, size: usize, out: &mut *mut CVoid) -> Status,
     free_pool: unsafe extern "win64" fn(*mut CVoid),
     create_event: *const NotYetDef,
     set_timer: *const NotYetDef,
@@ -66,6 +66,22 @@ pub struct BootServices {
 }
 
 impl BootServices {
+    pub fn get_memory_map(&self,memory_map_size: *mut usize, memory_map: *mut MemoryDescriptor, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Status {
+        unsafe {
+            (self.get_memory_map)(memory_map_size, memory_map, map_key, descriptor_size, descriptor_version)
+        }
+    }
+
+    pub unsafe fn allocate_pool<T>(&self, buffer_size: usize) -> Result<*mut T, Status>{
+        let mut ptr: *mut CVoid = 0 as *mut CVoid;
+        let status = (self.allocate_pool)(::get_pool_allocation_type(), buffer_size, &mut ptr);
+        if status != Status::Success {
+            return Err(status);
+        }
+
+        Ok(ptr as *mut T)
+    }
+
     pub fn free_pool<T>(&self, p: *const T) {
         unsafe {
             (self.free_pool)(p as *mut CVoid);
