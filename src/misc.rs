@@ -1,3 +1,4 @@
+use core::ptr;
 use core::mem;
 
 use base::{Status, MemoryDescriptor};
@@ -7,13 +8,13 @@ use systemtable::*;
 pub fn grow_buffer<T>(status: &mut Status, buffer: &mut *mut T, buffer_size: usize) -> bool {
     let bs = get_system_table().boot_services();
 
-    if *buffer == 0 as *mut T && buffer_size != 0 {
+    if *buffer == ptr::null_mut() && buffer_size != 0 {
         *status = Status::BufferTooSmall;
     }
 
     let mut try_again: bool = false;
     if *status == Status::BufferTooSmall {
-        if *buffer == 0 as *mut T {
+        if *buffer == ptr::null_mut() {
             bs.free_pool::<T>(*buffer);
         }
 
@@ -22,7 +23,7 @@ pub fn grow_buffer<T>(status: &mut Status, buffer: &mut *mut T, buffer_size: usi
             Err(status) => panic!("Error! {}", status.str())
         };
 
-        if *buffer != 0 as *mut T {
+        if *buffer != ptr::null_mut() {
             try_again = true;
         } else {
             *status = Status::OutOfResources;
@@ -30,7 +31,7 @@ pub fn grow_buffer<T>(status: &mut Status, buffer: &mut *mut T, buffer_size: usi
         }
     }
 
-    if !try_again && *status != Status::Success && *buffer != 0 as *mut T {
+    if !try_again && *status != Status::Success && *buffer != ptr::null_mut() {
         bs.free_pool::<T>(*buffer);
         *buffer = 0 as *mut T;
     }
@@ -41,7 +42,7 @@ pub fn grow_buffer<T>(status: &mut Status, buffer: &mut *mut T, buffer_size: usi
 pub fn lib_memory_map(no_entries: &mut usize, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Result<&'static MemoryDescriptor, Status> {
     let bs = get_system_table().boot_services();
     let mut status: Status = Status::Success;
-    let mut buffer: *mut MemoryDescriptor = 0 as *mut MemoryDescriptor;
+    let mut buffer: *mut MemoryDescriptor = ptr::null_mut();
     let mut buffer_size: usize = mem::size_of::<MemoryDescriptor>();
 
     loop {
