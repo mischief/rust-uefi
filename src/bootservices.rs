@@ -2,10 +2,10 @@ use core::ptr;
 use core::mem;
 
 use void::{NotYetDef, CVoid};
-use base::{Event, Handle, Handles, MemoryType, Status, Time, MemoryDescriptor};
+use base::{Event, Handle, Handles, MemoryType, Status, MemoryDescriptor};
 use guid;
 use table;
-use systemtable;
+use protocols;
 
 #[repr(C)]
 pub enum LocateSearchType {
@@ -105,7 +105,7 @@ impl BootServices {
         Ok(index)
     }
 
-    pub fn handle_protocol<T: ::Protocol>(&self, handle: Handle) -> Result<&'static T, Status> {
+    pub fn handle_protocol<T: protocols::Protocol>(&self, handle: Handle) -> Result<&'static T, Status> {
         let mut ptr : *mut CVoid = 0 as *mut CVoid;
         let guid = T::guid();
 
@@ -122,7 +122,7 @@ impl BootServices {
     }
 
     // TODO: for the love of types, fix me
-    pub fn close_protocol<T: ::Protocol>(&self, handle: Handle, agent_handle: Handle, controller_handle: Handle) -> Status {
+    pub fn close_protocol<T: protocols::Protocol>(&self, handle: Handle, agent_handle: Handle, controller_handle: Handle) -> Status {
         let guid = T::guid();
 
         unsafe {
@@ -131,7 +131,7 @@ impl BootServices {
     }
 
     /// Retrives a slice of handles by protocol GUID.
-    pub fn locate_handle_by_protocol<T: ::Protocol>(&self) -> Result<Handles, Status> {
+    pub fn locate_handle_by_protocol<T: protocols::Protocol>(&self) -> Result<Handles, Status> {
         let mut nhandles : usize = 0;
         let mut handles : *mut CVoid = ptr::null_mut();
         let guid = T::guid();

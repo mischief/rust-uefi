@@ -1,7 +1,6 @@
 use void;
 use base;
 use guid;
-use systemtable;
 
 pub trait Protocol {
     fn guid() -> &'static guid::Guid;
@@ -35,4 +34,3 @@ impl Protocol for LoadedImageProtocol {
         return &EFI_LOADED_IMAGE_PROTOCOL_GUID;
     }
 }
-

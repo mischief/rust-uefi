@@ -28,9 +28,9 @@ pub use console::{Attribute, ForegroundColor, BackgroundColor, InputKey, SimpleT
 
 static mut POOL_ALLOCATION_TYPE: base::MemoryType = base::MemoryType::BootServicesData;
 
-pub fn initialize_lib(hdl: base::Handle, sys: systemtable::SystemTable) {
-    let bs = systemtable::set_system_table(&sys).boot_services();
-    let loaded_image: &LoadedImageProtocol = match bs.handle_protocol::<LoadedImageProtocol>(hdl) {
+pub fn initialize_lib(hdl: &base::Handle, sys: &systemtable::SystemTable) {
+    let bs = systemtable::set_system_table(sys).boot_services();
+    let loaded_image: &LoadedImageProtocol = match bs.handle_protocol::<LoadedImageProtocol>(*hdl) {
         Ok(val) => val,
         Err(status) => panic!("Error! {}", status.str())
     };
@@ -43,3 +43,4 @@ pub fn initialize_lib(hdl: base::Handle, sys: systemtable::SystemTable) {
 pub fn get_pool_allocation_type() -> base::MemoryType {
     unsafe{ POOL_ALLOCATION_TYPE.clone() }
 }
+

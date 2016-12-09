@@ -15,5 +15,3 @@ A rust crate for interacting with UEFI
 [dev-dependencies]
 libc = "0.2"
 
-[feature]
-target_os = "efi"
