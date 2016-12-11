@@ -30,10 +30,11 @@ static mut POOL_ALLOCATION_TYPE: base::MemoryType = base::MemoryType::BootServic
 
 pub fn initialize_lib(hdl: &base::Handle, sys: &systemtable::SystemTable) {
     let bs = systemtable::set_system_table(sys).boot_services();
-    let loaded_image: &LoadedImageProtocol = match bs.handle_protocol::<LoadedImageProtocol>(*hdl) {
+    let loaded_image = match bs.handle_protocol::<LoadedImageProtocol>(hdl) {
         Ok(val) => val,
         Err(status) => panic!("Error! {}", status.str())
     };
+    systemtable::get_system_table().console().write("LoadedImageProtocol handled\n\r");
 
     unsafe {
         POOL_ALLOCATION_TYPE = loaded_image.image_data_type.clone()

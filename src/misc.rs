@@ -39,7 +39,7 @@ pub fn grow_buffer<T>(status: &mut Status, buffer: &mut *mut T, buffer_size: usi
     return try_again;
 }
 
-pub fn lib_memory_map(no_entries: &mut usize, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Result<&'static MemoryDescriptor, Status> {
+pub fn lib_memory_map(no_entries: &mut usize, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> &'static MemoryDescriptor {
     let bs = systemtable::get_system_table().boot_services();
     let mut status: Status = Status::Success;
     let mut buffer: *mut MemoryDescriptor = ptr::null_mut();
@@ -53,6 +53,5 @@ pub fn lib_memory_map(no_entries: &mut usize, map_key: *mut usize, descriptor_si
         }
     }
     *no_entries = buffer_size / unsafe { *descriptor_size };
-    let r = unsafe { mem::transmute::<*mut MemoryDescriptor, &'static MemoryDescriptor>(buffer) };
-    Ok(r)
+    unsafe { mem::transmute::<*mut MemoryDescriptor, &'static MemoryDescriptor>(buffer) }
 }

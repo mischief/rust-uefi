@@ -45,7 +45,7 @@ pub struct BootServices {
     start_image: *const NotYetDef,
     exit: *const NotYetDef,
     unload_image: *const NotYetDef,
-    exit_boot_services: *const NotYetDef,
+    exit_boot_services: unsafe extern "win64" fn(image_handle: Handle, map_key: usize) -> Status,
     get_next_monotonic_count: *const NotYetDef,
     stall: unsafe extern "win64" fn(usize) -> Status,
     set_watchdog_timer: unsafe extern "win64" fn(timeout: usize, code: u64, data_size: usize, data: *const u16) -> Status,
@@ -66,7 +66,7 @@ pub struct BootServices {
 }
 
 impl BootServices {
-    pub fn get_memory_map(&self,memory_map_size: *mut usize, memory_map: *mut MemoryDescriptor, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Status {
+    pub fn get_memory_map(&self, memory_map_size: *mut usize, memory_map: *mut MemoryDescriptor, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Status {
         unsafe {
             (self.get_memory_map)(memory_map_size, memory_map, map_key, descriptor_size, descriptor_version)
         }
@@ -105,13 +105,13 @@ impl BootServices {
         Ok(index)
     }
 
-    pub fn handle_protocol<T: protocols::Protocol>(&self, handle: Handle) -> Result<&'static T, Status> {
+    pub fn handle_protocol<T: protocols::Protocol>(&self, handle: &Handle) -> Result<&'static T, Status> {
         let mut ptr : *mut CVoid = 0 as *mut CVoid;
         let guid = T::guid();
 
 
         unsafe {
-            let status = (self.handle_protocol)(handle, guid, &mut ptr);
+            let status = (self.handle_protocol)(*handle, guid, &mut ptr);
             if status != Status::Success {
                 return Err(status);
             }
@@ -143,6 +143,12 @@ impl BootServices {
         }
 
         return Ok(Handles::new(handles as *mut Handle, nhandles));
+    }
+
+    pub fn exit_boot_services(&self, image_handle: &Handle, map_key: &usize) -> Status {
+        unsafe {
+            (self.exit_boot_services)(*image_handle, *map_key)
+        }
     }
 
     /// Sleep for a number of microseconds.
