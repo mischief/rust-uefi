@@ -1,57 +1,19 @@
-use core::ptr;
+//use core::ptr;
 use core::mem;
 
-use base::{Status, MemoryDescriptor};
+use base::MemoryDescriptor;
 
 use systemtable;
 
-pub fn grow_buffer<T>(status: &mut Status, buffer: &mut *mut T, buffer_size: usize) -> bool {
+// return (memory_map, memory_map_size, map_key, descriptor_size, descriptor_version)
+pub fn lib_memory_map() -> (&'static MemoryDescriptor,  usize, usize, usize, u32) {
     let bs = systemtable::get_system_table().boot_services();
-
-    if *buffer == ptr::null_mut() && buffer_size != 0 {
-        *status = Status::BufferTooSmall;
-    }
-
-    let mut try_again: bool = false;
-    if *status == Status::BufferTooSmall {
-        if *buffer == ptr::null_mut() {
-            bs.free_pool::<T>(*buffer);
-        }
-
-        *buffer = match unsafe { bs.allocate_pool::<T>(buffer_size) } {
-            Ok(val) => val,
-            Err(status) => panic!("Error! {}", status.str()),
-        };
-
-        if *buffer != ptr::null_mut() {
-            try_again = true;
-        } else {
-            *status = Status::OutOfResources;
-            try_again = false;
-        }
-    }
-
-    if !try_again && *status != Status::Success && *buffer != ptr::null_mut() {
-        bs.free_pool::<T>(*buffer);
-        *buffer = 0 as *mut T;
-    }
-
-    return try_again;
-}
-
-pub fn lib_memory_map(no_entries: &mut usize, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> &'static MemoryDescriptor {
-    let bs = systemtable::get_system_table().boot_services();
-    let mut status: Status = Status::Success;
-    let mut buffer: *mut MemoryDescriptor = ptr::null_mut();
     let mut buffer_size: usize = mem::size_of::<MemoryDescriptor>();
 
     loop {
-        if grow_buffer(&mut status, &mut buffer, buffer_size) {
-            bs.get_memory_map(&mut buffer_size, buffer, map_key, descriptor_size, descriptor_version);
-        } else {
-            break;
-        }
+        match unsafe { bs.get_memory_map(&mut buffer_size) } {
+            Ok(val) => return val,
+            Err(_) => { continue; },
+        };
     }
-    *no_entries = buffer_size / unsafe { *descriptor_size };
-    unsafe { mem::transmute::<*mut MemoryDescriptor, &'static MemoryDescriptor>(buffer) }
 }

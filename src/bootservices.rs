@@ -66,15 +66,29 @@ pub struct BootServices {
 }
 
 impl BootServices {
-    pub fn get_memory_map(&self, memory_map_size: *mut usize, memory_map: *mut MemoryDescriptor, map_key: *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Status {
-        unsafe {
-            (self.get_memory_map)(memory_map_size, memory_map, map_key, descriptor_size, descriptor_version)
+    // return (memory_map, memory_map_size, map_key, descriptor_size, descriptor_version)
+    pub unsafe fn get_memory_map(&self, memory_map_size: &mut usize)
+                          -> Result<(&'static MemoryDescriptor, usize, usize, usize, u32), Status> {
+        let ptr = try!(self.allocate_pool::<MemoryDescriptor>(*memory_map_size));
+        let mut map_key: usize = 0;
+        let mut descriptor_size: usize = 0;
+        let mut descriptor_version: u32 = 0;
+
+        let status = (self.get_memory_map)(memory_map_size, ptr, &mut map_key,
+                                  &mut descriptor_size, &mut descriptor_version);
+        if status == Status::Success {
+            let r = mem::transmute::<*mut MemoryDescriptor, &'static MemoryDescriptor>(ptr);
+            Ok((r, map_key, *memory_map_size, descriptor_size,descriptor_version))
+            
+        } else {
+            self.free_pool::<MemoryDescriptor>(ptr);
+            Err(status)
         }
     }
 
-    pub unsafe fn allocate_pool<T>(&self, buffer_size: usize) -> Result<*mut T, Status>{
+    pub fn allocate_pool<T>(&self, buffer_size: usize) -> Result<*mut T, Status>{
         let mut ptr: *mut CVoid = 0 as *mut CVoid;
-        let status = (self.allocate_pool)(::get_pool_allocation_type(), buffer_size, &mut ptr);
+        let status = unsafe { (self.allocate_pool)(::get_pool_allocation_type(), buffer_size, &mut ptr) };
         if status != Status::Success {
             return Err(status);
         }
