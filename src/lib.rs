@@ -8,10 +8,9 @@ mod table;
 mod systemtable;
 mod bootservices;
 mod runtimeservices;
+mod protocols;
 mod console;
-
-
-use void::{NotYetDef};
+mod misc;
 
 pub use base::{Handle, Handles, Event, MemoryType, Status, Time};
 pub use guid::*;
@@ -22,38 +21,27 @@ pub use bootservices::BootServices;
 
 pub use runtimeservices::{ResetType, RuntimeServices};
 
+pub use protocols::*;
+pub use misc::*;
+
 pub use console::{Attribute, ForegroundColor, BackgroundColor, InputKey, SimpleTextOutput, SimpleTextInput, Console};
 
-pub trait Protocol {
-    fn guid() -> &'static guid::Guid;
-}
+static mut POOL_ALLOCATION_TYPE: base::MemoryType = base::MemoryType::BootServicesData;
 
-/// GUID for UEFI protocol for loaded images
-pub static EFI_LOADED_IMAGE_PROTOCOL_GUID: Guid = Guid(0x5B1B31A1, 0x9562, 0x11d2, [0x8E,0x3F,0x00,0xA0,0xC9,0x69,0x72,0x3B]);
+pub fn initialize_lib(hdl: &base::Handle, sys: &systemtable::SystemTable) {
+    let bs = systemtable::set_system_table(sys).boot_services();
+    let loaded_image = match bs.handle_protocol::<LoadedImageProtocol>(hdl) {
+        Ok(val) => val,
+        Err(status) => panic!("Error! {}", status.str())
+    };
+    systemtable::get_system_table().console().write("LoadedImageProtocol handled\n\r");
 
-#[derive(Debug)]
-#[repr(C)]
-pub struct LoadedImageProtocol {
-    revision: u32,
-    parent_handle: ::base::Handle,
-    system_table: *const NotYetDef,
-    device_handle: Handle,
-    file_path: *const NotYetDef,
-    __reserved: *const NotYetDef,
-    load_options_size: u32,
-    load_options: *const NotYetDef,
-    pub image_base: usize,
-    pub image_size: u64,
-    image_code_type: ::base::MemoryType,
-    image_data_type: ::base::MemoryType,
-
-    //unload: unsafe extern "win64" fn(handle: ::base::Handle),
-    unload: *const NotYetDef,
-}
-
-impl Protocol for LoadedImageProtocol {
-    fn guid() -> &'static Guid {
-        return &EFI_LOADED_IMAGE_PROTOCOL_GUID;
+    unsafe {
+        POOL_ALLOCATION_TYPE = loaded_image.image_data_type.clone()
     }
+}
+
+pub fn get_pool_allocation_type() -> base::MemoryType {
+    unsafe{ POOL_ALLOCATION_TYPE.clone() }
 }
 

@@ -1,8 +1,7 @@
 use core::ptr;
-use core::fmt;
 
 use void::NotYetDef;
-use base::{Status, Time, TimeCapabilities};
+use base::{Status, Time, TimeCapabilities, MemoryDescriptor};
 use guid::Guid;
 use table::TableHeader;
 
@@ -24,7 +23,7 @@ pub struct RuntimeServices {
     set_time: *const NotYetDef,
     get_wakeup_time: *const NotYetDef,
     set_wakeup_time: *const NotYetDef,
-    set_virtual_address_map: *const NotYetDef,
+    set_virtual_address_map: unsafe extern "win64" fn(memory_map_size: usize, descriptor_size: usize, descriptor_version: u32, efi_memory_descriptor: *const MemoryDescriptor) -> Status,
     convert_pointer: *const NotYetDef,
     get_variable: unsafe extern "win64" fn(name: *const u16, guid: &Guid, attributes: *mut u32, size: *mut usize, data: *mut u8) -> Status,
     get_next_variable_name: *const NotYetDef,
@@ -37,6 +36,11 @@ pub struct RuntimeServices {
 }
 
 impl RuntimeServices {
+    pub fn set_virtual_address_map(&self, memory_map_size: &usize, descriptor_size: &usize, descriptor_version: &u32, efi_memory_descriptor: *const MemoryDescriptor) -> Status {
+        unsafe {
+            (self.set_virtual_address_map)(*memory_map_size, *descriptor_size, *descriptor_version, efi_memory_descriptor)
+        }
+    }
     pub fn get_time(&self) -> Result<Time, Status> {
         let mut t : Time = Time::default();
         let status = unsafe { (self.get_time)(&mut t, ptr::null_mut()) };
