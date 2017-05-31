@@ -65,7 +65,7 @@ impl<'a> ::core::iter::ExactSizeIterator for HandlesIterator<'a> {
 /// Type for EFI_EVENT.
 #[derive(Clone, Copy)]
 #[repr(C)]
-pub struct Event(*mut CVoid);
+pub struct Event(pub *mut CVoid);
 
 /// Type for EFI_STATUS
 #[cfg_attr(target_pointer_width = "32", repr(u32))]

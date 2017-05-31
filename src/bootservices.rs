@@ -3,6 +3,8 @@ use core::mem;
 
 use void::{NotYetDef, CVoid};
 use base::{Event, Handle, Handles, MemoryType, Status};
+use event::{EventType, EventNotify, TimerDelay};
+use task::TPL;
 use guid;
 use table;
 
@@ -24,8 +26,8 @@ pub struct BootServices {
     get_memory_map: *const NotYetDef,
     allocate_pool: unsafe extern "win64" fn(pool_type: MemoryType, size: usize, out: *mut *mut u8) -> Status,
     free_pool: unsafe extern "win64" fn(*mut CVoid),
-    create_event: *const NotYetDef,
-    set_timer: *const NotYetDef,
+    create_event: unsafe extern "win64" fn(event_type: EventType, notify_tpl: TPL, notify_function: Option<EventNotify>, notify_context: *const CVoid, event: *mut Event) -> Status,
+    set_timer: unsafe extern "win64" fn(event: Event, delay_type: TimerDelay, delay: u64) -> Status,
     // typedef EFI_STATUS (EFIAPI *EFI_WAIT_FOR_EVENT) (IN UINTN NumberOfEvents, IN EFI_EVENT *Event, OUT UINTN *Index);
     wait_for_event: unsafe extern "win64" fn(usize, *const Event, *mut usize) -> Status,
     signal_event: *const NotYetDef,
@@ -68,6 +70,23 @@ impl BootServices {
     pub fn free_pool<T>(&self, p: *const T) {
         unsafe {
             (self.free_pool)(p as *mut CVoid);
+        }
+    }
+
+    pub fn create_event(&self, event_type: EventType, notify_tpl: TPL, notify_func: Option<EventNotify>, notify_context: *const CVoid) -> Result<Event, Status> {
+        let mut event: Event = Event { 0: 0 as *mut CVoid };
+
+        let result = unsafe { (self.create_event)(event_type, notify_tpl, notify_func, notify_context, &mut event) };
+        if result != Status::Success {
+            return Err(result);
+        }
+
+        Ok(event)
+    }
+
+    pub fn set_timer(&self, event: Event, delay_type: TimerDelay, delay_ms: u64) -> Status {
+        unsafe {
+            (self.set_timer)(event, delay_type, delay_ms * 10000)
         }
     }
 
