@@ -2,10 +2,9 @@ use core::ptr;
 use core::mem;
 
 use void::{NotYetDef, CVoid};
-use base::{Event, Handle, Handles, MemoryType, Status, Time};
+use base::{Event, Handle, Handles, MemoryType, Status};
 use guid;
 use table;
-use systemtable;
 
 #[repr(C)]
 pub enum LocateSearchType {

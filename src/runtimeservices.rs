@@ -1,5 +1,4 @@
 use core::ptr;
-use core::fmt;
 
 use void::NotYetDef;
 use base::{Status, Time, TimeCapabilities};
