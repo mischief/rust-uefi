@@ -9,6 +9,8 @@ mod systemtable;
 mod bootservices;
 mod runtimeservices;
 mod console;
+mod task;
+mod event;
 
 
 use void::{NotYetDef};
@@ -23,6 +25,10 @@ pub use bootservices::BootServices;
 pub use runtimeservices::{ResetType, RuntimeServices};
 
 pub use console::{Attribute, ForegroundColor, BackgroundColor, InputKey, SimpleTextOutput, SimpleTextInput, Console};
+
+pub use event::*;
+
+pub use task::*;
 
 pub trait Protocol {
     fn guid() -> &'static guid::Guid;

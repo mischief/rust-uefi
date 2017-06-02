@@ -1,12 +1,16 @@
+use core::ptr;
+
 use void::*;
 use base::{Event, Status};
+use event::*;
+use task::TPL;
 use systemtable;
 
 #[derive(Clone, Copy, Debug)]
 #[repr(C)]
 pub struct InputKey {
-    scan_code: u16,
-    unicode_char: u16,
+    pub scan_code: u16,
+    pub unicode_char: u16,
 }
 
 #[repr(u8)]
@@ -19,7 +23,6 @@ pub enum ForegroundColor {
     Magenta = 0x5,
     Brown = 0x6,
     LightGray = 0x7,
-    Bright = 0x8,
     DarkGray = 0x8,
     LightBlue = 0x9,
     LightGreen = 0xA,
@@ -124,6 +127,7 @@ pub trait SimpleTextOutput {
 pub trait SimpleTextInput {
     fn read_key_async(&self) -> Result<InputKey, Status>;
     fn read_key(&self) -> Result<InputKey, Status>;
+    fn read_key_timeout(&self, timeout_millis: u64) -> Option<Result<InputKey, Status>>;
 }
 
 pub struct Console {
@@ -198,6 +202,32 @@ impl SimpleTextInput for Console {
                         _ => return Err(s),
                     }
                 },
+            }
+        }
+    }
+
+    fn read_key_timeout(&self, timeout_millis: u64) -> Option<Result<InputKey, Status>> {
+        let bs = self.system_table.boot_services();
+
+        match bs.create_event(EventType::Timer, TPL::Application, None, ptr::null()) {
+            Ok(timer_event) => {
+                let events : [Event; 2] = [self.input.wait_for_key, timer_event];
+
+                let set_result = bs.set_timer(timer_event, TimerDelay::Relative, timeout_millis);
+                if set_result != Status::Success {
+                    return Some(Err(set_result));
+                }
+
+                if let Ok(event_index) = bs.wait_for_event(&events) {
+                    if event_index == 0 {
+                        return Some(self.read_key_async());
+                    }
+                }
+
+                None
+            },
+            Err(status) => {
+                Some(Err(status))
             }
         }
     }
