@@ -19,7 +19,6 @@ pub enum ForegroundColor {
     Magenta = 0x5,
     Brown = 0x6,
     LightGray = 0x7,
-    Bright = 0x8,
     DarkGray = 0x8,
     LightBlue = 0x9,
     LightGreen = 0xA,
