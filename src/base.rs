@@ -219,3 +219,14 @@ pub struct TimeCapabilities {
     sets_to_zero: bool,
 }
 
+pub type PhysicalAddress = u64;
+pub type VirtualAddress = u64;
+
+#[repr(C)]
+pub struct MemoryDescriptor {
+    memory_type: MemoryType,
+    physical_start: PhysicalAddress,
+    virtual_start: VirtualAddress,
+    number_of_pages: u64,
+    attribute: u64
+}
