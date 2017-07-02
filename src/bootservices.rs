@@ -89,13 +89,13 @@ impl BootServices {
         Ok(index)
     }
 
-    pub fn handle_protocol<T: protocols::Protocol>(&self, handle: Handle) -> Result<&'static T, Status> {
+    pub fn handle_protocol<T: protocols::Protocol>(&self, handle: &Handle) -> Result<&'static T, Status> {
         let mut ptr : *mut CVoid = 0 as *mut CVoid;
         let guid = T::guid();
 
 
         unsafe {
-            let status = (self.handle_protocol)(handle, guid, &mut ptr);
+            let status = (self.handle_protocol)(*handle, guid, &mut ptr);
             if status != Status::Success {
                 return Err(status);
             }

@@ -153,7 +153,7 @@ fn status_str() {
 }
 
 /// Type for EFI_MEMORY_TYPE
-#[derive(PartialEq, PartialOrd, Debug)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 #[repr(C)]
 pub enum MemoryType {
     Reserved = 0,
