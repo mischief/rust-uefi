@@ -23,7 +23,7 @@ pub struct BootServices {
     allocate_pages: *const NotYetDef,
     free_pages: *const NotYetDef,
     get_memory_map: *const NotYetDef,
-    allocate_pool: unsafe extern "win64" fn(pool_type: MemoryType, size: usize, out: *mut *mut u8) -> Status,
+    allocate_pool: unsafe extern "win64" fn(pool_type: MemoryType, size: usize, out: &mut *mut CVoid) -> Status,
     free_pool: unsafe extern "win64" fn(*mut CVoid),
     create_event: *const NotYetDef,
     set_timer: *const NotYetDef,
@@ -66,6 +66,15 @@ pub struct BootServices {
 }
 
 impl BootServices {
+    pub fn allocate_pool<T>(&self, buffer_size: usize) -> Result<*mut T, Status>{
+        let mut ptr: *mut CVoid = 0 as *mut CVoid;
+        let status = unsafe { (self.allocate_pool)(::get_pool_allocation_type(), buffer_size, &mut ptr) };
+        if status != Status::Success {
+            return Err(status);
+        }
+        Ok(ptr as *mut T)
+    }
+
     pub fn free_pool<T>(&self, p: *const T) {
         unsafe {
             (self.free_pool)(p as *mut CVoid);
