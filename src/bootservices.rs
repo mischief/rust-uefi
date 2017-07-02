@@ -2,7 +2,7 @@ use core::ptr;
 use core::mem;
 
 use void::{NotYetDef, CVoid};
-use base::{Event, Handle, Handles, MemoryType, Status};
+use base::{Event, Handle, Handles, MemoryType, MemoryDescriptor, Status};
 use protocols;
 use guid;
 use table;
@@ -22,7 +22,7 @@ pub struct BootServices {
     restore_tpl: *const NotYetDef,
     allocate_pages: *const NotYetDef,
     free_pages: *const NotYetDef,
-    get_memory_map: *const NotYetDef,
+    get_memory_map: unsafe extern "win64" fn(memory_map_size: *mut usize, memory_map: *mut MemoryDescriptor, *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Status,
     allocate_pool: unsafe extern "win64" fn(pool_type: MemoryType, size: usize, out: &mut *mut CVoid) -> Status,
     free_pool: unsafe extern "win64" fn(*mut CVoid),
     create_event: *const NotYetDef,
@@ -66,6 +66,26 @@ pub struct BootServices {
 }
 
 impl BootServices {
+    // return (memory_map, memory_map_size, map_key, descriptor_size, descriptor_version)
+    pub unsafe fn get_memory_map(&self, memory_map_size: &mut usize)
+                          -> Result<(&'static MemoryDescriptor, usize, usize, usize, u32), Status> {
+        let ptr = try!(self.allocate_pool::<MemoryDescriptor>(*memory_map_size));
+        let mut map_key: usize = 0;
+        let mut descriptor_size: usize = 0;
+        let mut descriptor_version: u32 = 0;
+
+        let status = (self.get_memory_map)(memory_map_size, ptr, &mut map_key,
+                                  &mut descriptor_size, &mut descriptor_version);
+        if status == Status::Success {
+            let r = mem::transmute::<*mut MemoryDescriptor, &'static MemoryDescriptor>(ptr);
+            Ok((r, map_key, *memory_map_size, descriptor_size,descriptor_version))
+            
+        } else {
+            self.free_pool::<MemoryDescriptor>(ptr);
+            Err(status)
+        }
+    }
+
     pub fn allocate_pool<T>(&self, buffer_size: usize) -> Result<*mut T, Status>{
         let mut ptr: *mut CVoid = 0 as *mut CVoid;
         let status = unsafe { (self.allocate_pool)(::get_pool_allocation_type(), buffer_size, &mut ptr) };
