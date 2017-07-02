@@ -45,7 +45,7 @@ pub struct BootServices {
     start_image: *const NotYetDef,
     exit: *const NotYetDef,
     unload_image: *const NotYetDef,
-    exit_boot_services: *const NotYetDef,
+    exit_boot_services: unsafe extern "win64" fn(image_handle: Handle, map_key: usize) -> Status,
     get_next_monotonic_count: *const NotYetDef,
     stall: unsafe extern "win64" fn(usize) -> Status,
     set_watchdog_timer: unsafe extern "win64" fn(timeout: usize, code: u64, data_size: usize, data: *const u16) -> Status,
@@ -127,6 +127,12 @@ impl BootServices {
         }
 
         return Ok(Handles::new(handles as *mut Handle, nhandles));
+    }
+
+    pub fn exit_boot_services(&self, image_handle: &Handle, map_key: &usize) -> Status {
+        unsafe {
+            (self.exit_boot_services)(*image_handle, *map_key)
+        }
     }
 
     /// Sleep for a number of microseconds.
