@@ -3,6 +3,7 @@ use core::mem;
 
 use void::{NotYetDef, CVoid};
 use base::{Event, Handle, Handles, MemoryType, Status};
+use protocols;
 use guid;
 use table;
 
@@ -34,7 +35,7 @@ pub struct BootServices {
     install_protocol_interface: *const NotYetDef,
     reinstall_protocol_interface: *const NotYetDef,
     uninstall_protocol_interface: *const NotYetDef,
-    handle_protocol: unsafe extern "win64" fn(Handle, &guid::Guid, &mut *mut CVoid) -> Status,
+    handle_protocol: unsafe extern "win64" fn(Handle, *const guid::Guid, &mut *mut CVoid) -> Status,
     __reserved: *const NotYetDef,
     register_protocol_notify: *const NotYetDef,
     locate_handle: *const NotYetDef,
@@ -51,10 +52,10 @@ pub struct BootServices {
     connect_controller: *const NotYetDef,
     disconnect_controller: *const NotYetDef,
     open_protocol: *const NotYetDef,
-    close_protocol: unsafe extern "win64" fn(handle: Handle, protocol: &guid::Guid, agent_handle: Handle, controller_handle: Handle) -> Status,
+    close_protocol: unsafe extern "win64" fn(handle: Handle, protocol: *const guid::Guid, agent_handle: Handle, controller_handle: Handle) -> Status,
     open_protocol_information: *const NotYetDef,
     protocols_per_handle: *const NotYetDef,
-    locate_handle_buffer: unsafe extern "win64" fn(search_type: LocateSearchType, protocol: &guid::Guid, search_key: *const CVoid, nhandles: *mut usize, handles: *mut *mut CVoid) -> Status,
+    locate_handle_buffer: unsafe extern "win64" fn(search_type: LocateSearchType, protocol: *const guid::Guid, search_key: *const CVoid, nhandles: *mut usize, handles: *mut *mut CVoid) -> Status,
     locate_protocol: *const NotYetDef,
     install_multiple_protocol_interfaces: *const NotYetDef,
     uninstall_multiple_protocol_interfaces: *const NotYetDef,
@@ -88,7 +89,7 @@ impl BootServices {
         Ok(index)
     }
 
-    pub fn handle_protocol<T: ::Protocol>(&self, handle: Handle) -> Result<&'static T, Status> {
+    pub fn handle_protocol<T: protocols::Protocol>(&self, handle: Handle) -> Result<&'static T, Status> {
         let mut ptr : *mut CVoid = 0 as *mut CVoid;
         let guid = T::guid();
 
@@ -105,7 +106,7 @@ impl BootServices {
     }
 
     // TODO: for the love of types, fix me
-    pub fn close_protocol<T: ::Protocol>(&self, handle: Handle, agent_handle: Handle, controller_handle: Handle) -> Status {
+    pub fn close_protocol<T: protocols::Protocol>(&self, handle: Handle, agent_handle: Handle, controller_handle: Handle) -> Status {
         let guid = T::guid();
 
         unsafe {
@@ -114,7 +115,7 @@ impl BootServices {
     }
 
     /// Retrives a slice of handles by protocol GUID.
-    pub fn locate_handle_by_protocol<T: ::Protocol>(&self) -> Result<Handles, Status> {
+    pub fn locate_handle_by_protocol<T: protocols::Protocol>(&self) -> Result<Handles, Status> {
         let mut nhandles : usize = 0;
         let mut handles : *mut CVoid = ptr::null_mut();
         let guid = T::guid();
