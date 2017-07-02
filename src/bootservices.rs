@@ -2,7 +2,8 @@ use core::ptr;
 use core::mem;
 
 use void::{NotYetDef, CVoid};
-use base::{Event, Handle, Handles, MemoryType, Status};
+use base::{Event, Handle, Handles, MemoryType, MemoryDescriptor, Status};
+use protocols;
 use guid;
 use table;
 
@@ -21,8 +22,8 @@ pub struct BootServices {
     restore_tpl: *const NotYetDef,
     allocate_pages: *const NotYetDef,
     free_pages: *const NotYetDef,
-    get_memory_map: *const NotYetDef,
-    allocate_pool: unsafe extern "win64" fn(pool_type: MemoryType, size: usize, out: *mut *mut u8) -> Status,
+    get_memory_map: unsafe extern "win64" fn(memory_map_size: *mut usize, memory_map: *mut MemoryDescriptor, *mut usize, descriptor_size: *mut usize, descriptor_version: *mut u32) -> Status,
+    allocate_pool: unsafe extern "win64" fn(pool_type: MemoryType, size: usize, out: &mut *mut CVoid) -> Status,
     free_pool: unsafe extern "win64" fn(*mut CVoid),
     create_event: *const NotYetDef,
     set_timer: *const NotYetDef,
@@ -34,7 +35,7 @@ pub struct BootServices {
     install_protocol_interface: *const NotYetDef,
     reinstall_protocol_interface: *const NotYetDef,
     uninstall_protocol_interface: *const NotYetDef,
-    handle_protocol: unsafe extern "win64" fn(Handle, &guid::Guid, &mut *mut CVoid) -> Status,
+    handle_protocol: unsafe extern "win64" fn(Handle, *const guid::Guid, &mut *mut CVoid) -> Status,
     __reserved: *const NotYetDef,
     register_protocol_notify: *const NotYetDef,
     locate_handle: *const NotYetDef,
@@ -44,17 +45,17 @@ pub struct BootServices {
     start_image: *const NotYetDef,
     exit: *const NotYetDef,
     unload_image: *const NotYetDef,
-    exit_boot_services: *const NotYetDef,
+    exit_boot_services: unsafe extern "win64" fn(image_handle: Handle, map_key: usize) -> Status,
     get_next_monotonic_count: *const NotYetDef,
     stall: unsafe extern "win64" fn(usize) -> Status,
     set_watchdog_timer: unsafe extern "win64" fn(timeout: usize, code: u64, data_size: usize, data: *const u16) -> Status,
     connect_controller: *const NotYetDef,
     disconnect_controller: *const NotYetDef,
     open_protocol: *const NotYetDef,
-    close_protocol: unsafe extern "win64" fn(handle: Handle, protocol: &guid::Guid, agent_handle: Handle, controller_handle: Handle) -> Status,
+    close_protocol: unsafe extern "win64" fn(handle: Handle, protocol: *const guid::Guid, agent_handle: Handle, controller_handle: Handle) -> Status,
     open_protocol_information: *const NotYetDef,
     protocols_per_handle: *const NotYetDef,
-    locate_handle_buffer: unsafe extern "win64" fn(search_type: LocateSearchType, protocol: &guid::Guid, search_key: *const CVoid, nhandles: *mut usize, handles: *mut *mut CVoid) -> Status,
+    locate_handle_buffer: unsafe extern "win64" fn(search_type: LocateSearchType, protocol: *const guid::Guid, search_key: *const CVoid, nhandles: *mut usize, handles: *mut *mut CVoid) -> Status,
     locate_protocol: *const NotYetDef,
     install_multiple_protocol_interfaces: *const NotYetDef,
     uninstall_multiple_protocol_interfaces: *const NotYetDef,
@@ -65,6 +66,35 @@ pub struct BootServices {
 }
 
 impl BootServices {
+    // return (memory_map, memory_map_size, map_key, descriptor_size, descriptor_version)
+    pub unsafe fn get_memory_map(&self, memory_map_size: &mut usize)
+                          -> Result<(&'static MemoryDescriptor, usize, usize, usize, u32), Status> {
+        let ptr = try!(self.allocate_pool::<MemoryDescriptor>(*memory_map_size));
+        let mut map_key: usize = 0;
+        let mut descriptor_size: usize = 0;
+        let mut descriptor_version: u32 = 0;
+
+        let status = (self.get_memory_map)(memory_map_size, ptr, &mut map_key,
+                                  &mut descriptor_size, &mut descriptor_version);
+        if status == Status::Success {
+            let r = mem::transmute::<*mut MemoryDescriptor, &'static MemoryDescriptor>(ptr);
+            Ok((r, map_key, *memory_map_size, descriptor_size,descriptor_version))
+            
+        } else {
+            self.free_pool::<MemoryDescriptor>(ptr);
+            Err(status)
+        }
+    }
+
+    pub fn allocate_pool<T>(&self, buffer_size: usize) -> Result<*mut T, Status>{
+        let mut ptr: *mut CVoid = 0 as *mut CVoid;
+        let status = unsafe { (self.allocate_pool)(::get_pool_allocation_type(), buffer_size, &mut ptr) };
+        if status != Status::Success {
+            return Err(status);
+        }
+        Ok(ptr as *mut T)
+    }
+
     pub fn free_pool<T>(&self, p: *const T) {
         unsafe {
             (self.free_pool)(p as *mut CVoid);
@@ -88,13 +118,13 @@ impl BootServices {
         Ok(index)
     }
 
-    pub fn handle_protocol<T: ::Protocol>(&self, handle: Handle) -> Result<&'static T, Status> {
+    pub fn handle_protocol<T: protocols::Protocol>(&self, handle: &Handle) -> Result<&'static T, Status> {
         let mut ptr : *mut CVoid = 0 as *mut CVoid;
         let guid = T::guid();
 
 
         unsafe {
-            let status = (self.handle_protocol)(handle, guid, &mut ptr);
+            let status = (self.handle_protocol)(*handle, guid, &mut ptr);
             if status != Status::Success {
                 return Err(status);
             }
@@ -105,7 +135,7 @@ impl BootServices {
     }
 
     // TODO: for the love of types, fix me
-    pub fn close_protocol<T: ::Protocol>(&self, handle: Handle, agent_handle: Handle, controller_handle: Handle) -> Status {
+    pub fn close_protocol<T: protocols::Protocol>(&self, handle: Handle, agent_handle: Handle, controller_handle: Handle) -> Status {
         let guid = T::guid();
 
         unsafe {
@@ -114,7 +144,7 @@ impl BootServices {
     }
 
     /// Retrives a slice of handles by protocol GUID.
-    pub fn locate_handle_by_protocol<T: ::Protocol>(&self) -> Result<Handles, Status> {
+    pub fn locate_handle_by_protocol<T: protocols::Protocol>(&self) -> Result<Handles, Status> {
         let mut nhandles : usize = 0;
         let mut handles : *mut CVoid = ptr::null_mut();
         let guid = T::guid();
@@ -126,6 +156,12 @@ impl BootServices {
         }
 
         return Ok(Handles::new(handles as *mut Handle, nhandles));
+    }
+
+    pub fn exit_boot_services(&self, image_handle: &Handle, map_key: &usize) -> Status {
+        unsafe {
+            (self.exit_boot_services)(*image_handle, *map_key)
+        }
     }
 
     /// Sleep for a number of microseconds.
